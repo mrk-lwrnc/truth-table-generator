@@ -16,10 +16,8 @@ function main() {
         if (statement_error) {
             error_container_selector.innerHTML = statement_error;
             error_container_selector.style.display = 'block';
-            return;
-        }
+        } else { updateTruthTable(table_selector, statement); }
 
-        updateTruthTable(table_selector, statement);
     });
 }
 
