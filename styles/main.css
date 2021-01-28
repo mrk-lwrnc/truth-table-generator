@@ -60,3 +60,13 @@ body {
     padding: 1em;
     border: 1px solid #868686;
 }
+
+.error-container {
+    margin: 1em;
+    padding: 1em;
+    color: #cecece;
+    background-color: #2b2b2b;
+    font-family: sans-serif;
+    font-size: 1em;
+    display: none;
+}

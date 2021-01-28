@@ -1,14 +1,39 @@
 function main() {
     const input_selector = document.querySelector('.input-text-field');
     const table_selector = document.querySelector('.output-table');
+    const error_container_selector = document.querySelector('.error-container');
 
-    input_selector.addEventListener('keyup', (event) => {
+    input_selector.addEventListener('input', (event) => {
         const statement = event.target.value.trim();
-        table_selector.innerHTML = '';
 
+        table_selector.innerHTML = '';
         if (statement === '') { return; }
+
+        error_container_selector.innerHTML = '';
+        error_container_selector.style.display = 'none';
+
+        const statement_error = getStatementError(statement);
+        if (statement_error) {
+            error_container_selector.innerHTML = statement_error;
+            error_container_selector.style.display = 'block';
+            return;
+        }
+
         updateTruthTable(table_selector, statement);
     });
+}
+
+function getStatementError(statement) {
+    const invalid_tokens_regex = /(\s)|([a-zA-Z]+([0-9]+)?)|!|~|¬|∧|\^|∨|&&|\|\||→|->|=>|↔|<->|<=>|\(|\)/g;
+    const variables_regex = /([a-zA-Z]+([0-9]+)?)/g;
+
+    const [invalid_token] = statement.replace(invalid_tokens_regex, '').split('');
+    if (invalid_token) { return `The character ${invalid_token} was not recognized.`; }
+
+    try { eval(replaceConnectives(statement).replace(variables_regex, true)); }
+    catch (error) { return 'The statement is invalid.'; }
+
+    return '';
 }
 
 function updateTruthTable(table_selector, statement) {
@@ -44,15 +69,9 @@ function getDataFromStatement(statement) {
 }
 
 function evaluateStatement(statement, variables, boolean_permutations) {
+    const tokens = statement.match(/(&&)|(\|\|)|!|(<=)|(==)|\(|\)|([a-zA-Z]+([0-9]+)?)/g);
     return boolean_permutations.map(permutation => {
-        const current_tokens = getTokens(statement, variables, permutation);
-
-        try { eval(current_tokens.join('')); }
-        catch (ex) {
-            console.error(ex);
-            return 'Evaluation Error!';
-        }
-
+        const current_tokens = applyPermutationToTokens(tokens, variables, permutation);
         return evaluateTokens(current_tokens);
     });
 }
@@ -129,37 +148,29 @@ function evaluateNegations(tokens) {
 function replaceConnectives(statement) {
     return (
         statement
-            .replaceAll(/not|~|¬/g, '!')
-            .replaceAll(/and|∧|\^/g, '&&')
-            .replaceAll(/or|∨/g, '||')
+            .replaceAll(/((\s)+(not)(\s)+)|~|¬/g, '!')
+            .replaceAll(/((\s)+(and)(\s)+)|∧|\^/g, '&&')
+            .replaceAll(/((\s)+(or)(\s)+)|∨/g, '||')
             .replaceAll(/→|->|=>/g, '<=')
             .replaceAll(/↔|<->|<=>/g, '==')
-            .split(' ').join('')
     );
 }
 
 function getVariables(statement) {
-    return (
-        statement
-            .split(/!|&&|\|\||<=|==|\(|\)/g)
-            .filter((variable, index, variables) => {
-                const is_unique = variables.indexOf(variable) == index;
-                const is_not_empty = variable !== '';
-                const is_alphanumeric = variable.match(/^[a-z0-9]+$/) != null;
+    const variables = statement.match(/([a-zA-Z]+([0-9]+)?)/g) || [];
 
-                return is_unique && is_not_empty && is_alphanumeric;
-            })
-    );
+    if (!variables) { return variables; }
+    return variables.filter((variable, index, variables) => variables.indexOf(variable) === index)
 }
 
-function getBooleanPermutations(number_of_compounds) {
-    const number_of_permutations = getNthPowerOfTwo(number_of_compounds);
+function getBooleanPermutations(number_of_variables) {
+    const number_of_permutations = getNthPowerOfTwo(number_of_variables);
     let boolean_permutations = [];
 
     for (let pmt_index = 0; pmt_index < number_of_permutations; pmt_index++) {
         let boolean_permutation = [];
 
-        for (let var_index = number_of_compounds - 1; var_index >= 0; var_index--) {
+        for (let var_index = number_of_variables - 1; var_index >= 0; var_index--) {
             const variable_value = Boolean(pmt_index & getNthPowerOfTwo(var_index));
             boolean_permutation.push(variable_value);
         }
@@ -170,25 +181,12 @@ function getBooleanPermutations(number_of_compounds) {
     return boolean_permutations;
 }
 
-function getTokens(statement, variables, boolean_permutation) {
-    const connectives = ['!', '&&', '||', '<=', '==', '(', ')'];
-    const divider = ' ';
-
-    return (
-        connectives
-            .reduce((modified_statement, current_connective) => {
-                return modified_statement.replaceAll(
-                    current_connective, ''.concat(divider, current_connective, divider)
-                );
-            }, statement)
-            .split(divider)
-            .filter(token => token !== '')
-            .map(token => {
-                if (!variables.includes(token)) { return token; }
-                const variable_index = variables.indexOf(token);
-                return boolean_permutation[variable_index];
-            })
-    );
+function applyPermutationToTokens(tokens, variables, boolean_permutation) {
+    return tokens.map(token => {
+        if (!variables.includes(token)) { return token; }
+        const variable_index = variables.indexOf(token);
+        return boolean_permutation[variable_index];
+    });
 }
 
 function getNthPowerOfTwo(number) { return 1 << number; }
