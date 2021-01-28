@@ -3,10 +3,10 @@ function main() {
     const table_selector = document.querySelector('.output-table');
 
     input_selector.addEventListener('keyup', (event) => {
-        const statement = event.target.value;
+        const statement = event.target.value.trim();
         table_selector.innerHTML = '';
 
-        if (statement.trim() === '') { return; }
+        if (statement === '') { return; }
         updateTruthTable(table_selector, statement);
     });
 }
