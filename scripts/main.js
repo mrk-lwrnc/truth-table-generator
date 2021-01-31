@@ -24,10 +24,10 @@ function main() {
 }
 
 function getStatementError(statement) {
-    const invalid_tokens_regex = /(\s)|([a-zA-Z]+([0-9]+)?)|!|~|¬|∧|\^|∨|&&|\|\||→|->|=>|↔|<->|<=>|\(|\)/g;
-    const variables_regex = /([a-zA-Z]+([0-9]+)?)/g;
+    const valid_tokens_regex = /(\s)|([a-zA-Z]+(\w*))|!|~|¬|∧|\^|∨|&&|\|\||→|->|=>|↔|<->|<=>|\(|\)/g;
+    const variables_regex = /[a-zA-Z]+(\w*)/g;
 
-    const [invalid_token] = statement.replace(invalid_tokens_regex, '').split('');
+    const [invalid_token] = statement.replace(valid_tokens_regex, '').split('');
     if (invalid_token) { return `The character ${invalid_token} was not recognized.`; }
 
     try { eval(replaceConnectives(statement).replace(variables_regex, true)); }
@@ -69,7 +69,7 @@ function getDataFromStatement(statement) {
 }
 
 function evaluateStatement(statement, variables, boolean_permutations) {
-    const tokens = statement.match(/(&&)|(\|\|)|!|(<=)|(==)|\(|\)|([a-zA-Z]+([0-9]+)?)/g);
+    const tokens = statement.match(/(&&)|(\|\|)|!|(<=)|(==)|\(|\)|([a-zA-Z]+(\w*))/g);
     return boolean_permutations.map(permutation => {
         const current_tokens = applyPermutationToTokens(tokens, variables, permutation);
         return evaluateTokens(current_tokens);
@@ -148,16 +148,16 @@ function evaluateNegations(tokens) {
 function replaceConnectives(statement) {
     return (
         statement
-            .replaceAll(/((\s)+(not)(\s)+)|~|¬/g, '!')
-            .replaceAll(/((\s)+(and)(\s)+)|∧|\^/g, '&&')
-            .replaceAll(/((\s)+(or)(\s)+)|∨/g, '||')
-            .replaceAll(/→|->|=>/g, '<=')
+            .replaceAll(/(\b(not)\b)|~|¬|!/g, '!')
+            .replaceAll(/(\b(and)\b)|∧|\^/g, '&&')
+            .replaceAll(/(\b(or)\b)|∨/g, '||')
             .replaceAll(/↔|<->|<=>/g, '==')
+            .replaceAll(/→|->|=>/g, '<=')
     );
 }
 
 function getVariables(statement) {
-    const variables = statement.match(/([a-zA-Z]+([0-9]+)?)/g) || [];
+    const variables = statement.match(/[a-zA-Z]+(\w*)/g) || [];
 
     if (!variables) { return variables; }
     return variables.filter((variable, index, variables) => variables.indexOf(variable) === index)
