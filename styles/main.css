@@ -70,3 +70,9 @@ body {
     font-size: 1em;
     display: none;
 }
+
+@media screen and (max-width: 750px) {
+    .input-text-field {
+        width: 90%;
+    }
+}
