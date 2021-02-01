@@ -1,36 +1,45 @@
-function main() {
-    const input_selector = document.querySelector('.input-text-field');
-    const table_selector = document.querySelector('.output-table');
-    const error_container_selector = document.querySelector('.error-container');
+const regexps = {
+    'true': /(\b(T|true)\b)|⊤/g,
+    'false': /(\b(F|false)\b)|⊥/g,
+    'not': /(\b(not)\b)|~|¬|!/g,
+    'and': /(\b(and)\b)|∧|\^/g,
+    'or': /(\b(or)\b)|∨/g,
+    'implication': /→|->|=>/g,
+    'double implication': /↔|<->|<=>/g,
+    'variable': /\b(?!(?:true|false)\b)[a-zA-Z](\w)*/g,
+    'unprocessed_tokens': /(\s)|⊤|⊥|!|~|¬|∧|\^|∨|&&|\|\||→|->|=>|↔|<->|<=>|\(|\)|([a-zA-Z]+(\w*))/g,
+    'processed_tokens': /&&|\|\||!|<=|==|\(|\)|(\b(?!(?:true|false)\b)[a-zA-Z](\w)*)|true|false/g
+};
 
-    input_selector.addEventListener('input', (event) => {
-        const statement = event.target.value.trim();
+const input_selector = document.querySelector('.input-text-field');
+const table_selector = document.querySelector('.output-table');
+const error_container_selector = document.querySelector('.error-container');
 
-        table_selector.innerHTML = '';
-        if (statement === '') { return; }
+input_selector.addEventListener('input', event => {
+    const statement = event.target.value.trim();
 
-        error_container_selector.innerHTML = '';
-        error_container_selector.style.display = 'none';
+    table_selector.innerHTML = '';
+    if (!statement) { return; }
 
-        const statement_error = getStatementError(statement);
-        if (statement_error) {
-            error_container_selector.innerHTML = statement_error;
-            error_container_selector.style.display = 'block';
-            return;
-        }
+    error_container_selector.innerHTML = '';
+    error_container_selector.style.display = 'none';
 
-        updateTruthTable(table_selector, statement);
-    });
-}
+    const statement_error = getStatementError(statement);
+    if (statement_error) {
+        error_container_selector.innerHTML = statement_error;
+        error_container_selector.style.display = 'block';
+        return;
+    }
+
+    updateTruthTable(table_selector, statement);
+});
+
 
 function getStatementError(statement) {
-    const valid_tokens_regex = /(\s)|([a-zA-Z]+(\w*))|!|~|¬|∧|\^|∨|&&|\|\||→|->|=>|↔|<->|<=>|\(|\)/g;
-    const variables_regex = /[a-zA-Z]+(\w*)/g;
-
-    const [invalid_token] = statement.replace(valid_tokens_regex, '').split('');
+    const [invalid_token] = statement.replace(regexps['unprocessed_tokens'], '').split('');
     if (invalid_token) { return `The character ${invalid_token} was not recognized.`; }
 
-    try { eval(replaceConnectives(statement).replace(variables_regex, true)); }
+    try { eval(replaceConnectives(statement).replace(regexps['variable'], true)); }
     catch (error) { return 'The statement is invalid.'; }
 
     return '';
@@ -69,7 +78,7 @@ function getDataFromStatement(statement) {
 }
 
 function evaluateStatement(statement, variables, boolean_permutations) {
-    const tokens = statement.match(/(&&)|(\|\|)|!|(<=)|(==)|\(|\)|([a-zA-Z]+(\w*))/g);
+    const tokens = statement.match(regexps['processed_tokens']);
     return boolean_permutations.map(permutation => {
         const current_tokens = applyPermutationToTokens(tokens, variables, permutation);
         return evaluateTokens(current_tokens);
@@ -148,16 +157,18 @@ function evaluateNegations(tokens) {
 function replaceConnectives(statement) {
     return (
         statement
-            .replaceAll(/(\b(not)\b)|~|¬|!/g, '!')
-            .replaceAll(/(\b(and)\b)|∧|\^/g, '&&')
-            .replaceAll(/(\b(or)\b)|∨/g, '||')
-            .replaceAll(/↔|<->|<=>/g, '==')
-            .replaceAll(/→|->|=>/g, '<=')
+            .replaceAll(regexps['true'], 'true')
+            .replaceAll(regexps['false'], 'false')
+            .replaceAll(regexps['not'], '!')
+            .replaceAll(regexps['and'], '&&')
+            .replaceAll(regexps['or'], '||')
+            .replaceAll(regexps['double implication'], '==')
+            .replaceAll(regexps['implication'], '<=')
     );
 }
 
 function getVariables(statement) {
-    const variables = statement.match(/[a-zA-Z]+(\w*)/g) || [];
+    const variables = statement.match(regexps['variable']) || [];
 
     if (!variables) { return variables; }
     return variables.filter((variable, index, variables) => variables.indexOf(variable) === index)
@@ -183,6 +194,8 @@ function getBooleanPermutations(number_of_variables) {
 
 function applyPermutationToTokens(tokens, variables, boolean_permutation) {
     return tokens.map(token => {
+        if (token === 'true') { return true; }
+        if (token === 'false') { return false; }
         if (!variables.includes(token)) { return token; }
         const variable_index = variables.indexOf(token);
         return boolean_permutation[variable_index];
@@ -190,6 +203,3 @@ function applyPermutationToTokens(tokens, variables, boolean_permutation) {
 }
 
 function getNthPowerOfTwo(number) { return 1 << number; }
-
-
-main();
