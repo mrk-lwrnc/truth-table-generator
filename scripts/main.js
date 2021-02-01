@@ -50,21 +50,27 @@ function updateTruthTable(table_selector, statement) {
 
     const table_heading_row = table_selector.insertRow();
     variables.forEach(variable => insertHeading(table_heading_row, variable));
-    if (statement !== variables[0]) { insertHeading(table_heading_row, statement); }
+    if (statement !== variables[0]) { insertHeading(table_heading_row, statement, true); }
 
     boolean_permutations.forEach((permutation, index) => {
         const row = table_selector.insertRow();
         permutation.forEach(value => insertCell(row, value));
-        if (statement !== variables[0]) { insertCell(row, evaluations[index]); }
+        if (statement !== variables[0]) { insertCell(row, evaluations[index], true); }
     });
 }
 
-function insertHeading(row, text) {
+function insertHeading(row, text, is_output_heading = false) {
+    if (is_output_heading) {
+        row.innerHTML += `<th class="output-heading">${text}</th>`
+        return;
+    }
+
     row.innerHTML += `<th>${text}</th>`;
 }
 
-function insertCell(row, text) {
+function insertCell(row, text, is_output_cell = false) {
     const cell = row.insertCell();
+    if (is_output_cell) { cell.classList.add('output-cell'); }
     cell.innerHTML = text;
 }
 

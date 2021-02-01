@@ -64,13 +64,22 @@ body {
 }
 
 .output-table th {
-    background-color: #313131;
+    background-color: #3a3a3a;
 }
 
 .output-table th,
 .output-table td {
     padding: 1em;
     border: 1px solid #868686;
+}
+
+.output-heading {
+    color: #6ecfc2;
+}
+
+.output-cell {
+    color: #6ecfc2;
+    background-color: #292929;
 }
 
 .error-container {
